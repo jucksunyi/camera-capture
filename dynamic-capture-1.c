@@ -34,6 +34,9 @@
 #define HDMI_WIDTH 1280
 #define HDMI_HEIGHT 960
 
+#define VIDEO_WIDTH 1280
+#define VIDEO_HEIGHT 960
+
 #define RVIN_DEFAULT_FORMAT			V4L2_PIX_FMT_YUYV
 
 
@@ -550,8 +553,8 @@ static void init_device (void)
 	CLEAR (fmt);
 
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = CAMERA_WIDTH;
-	fmt.fmt.pix.height = CAMERA_HEIGHT*2;
+	fmt.fmt.pix.width = VIDEO_WIDTH;
+	fmt.fmt.pix.height = VIDEO_HEIGHT;
 	fmt.fmt.pix.pixelformat = RVIN_DEFAULT_FORMAT;
 	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 	if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
