@@ -37,16 +37,10 @@
 #define VIDEO_WIDTH 1280
 #define VIDEO_HEIGHT 960
 
+#define FRAME_SECOND  375    // speed is 12.5 frame/s, so 12.5*30 = 375, the time of cycle is 30s
+
 #define RVIN_DEFAULT_FORMAT			V4L2_PIX_FMT_YUYV
 
-
-
-#define __MYDEBUG__
-#ifdef __MYDEBUG__ 
-#define MYDEBUG(format,...) printf("File: "__FILE__", Line: %05d: "format"\n", __LINE__, ##__VA_ARGS__)
-#else 
-#define MYDEBUG(format,...) 
-#endif 
 
 /************!!!*********************/
 // static io_method io = IO_METHOD_MMAP;   P48
@@ -68,7 +62,8 @@ struct buffer {
 	void * start;
 	size_t length;
 };
-static char * dev_name = NULL;
+//static char * dev_name = NULL;
+        static char dev_name[20]  = {0};
 static int bp=-1;
 static int tty=-1;
 struct fb_var_screeninfo  vinfo;
@@ -214,9 +209,11 @@ static int read_frame (void)
 
 static void mainloop (void)
 {
-	unsigned int count;
-	count = 1000;
-	while (1) {
+    unsigned int count;
+    int i_tmp = 0;
+    count = 1000;
+    while (i_tmp < FRAME_SECOND) {
+        i_tmp++;
 //		gettimeofday(&tvv,NULL);
 		for (;;) {
 			/*fd_set is a struct actualy a
@@ -415,8 +412,6 @@ static void init_mmap (void)
 		if (-1 == xioctl (fd, VIDIOC_QUERYBUF, &buf))
 			errno_exit ("VIDIOC_QUERYBUF");
 		buffers[n_buffers].length = buf.length;
-		MYDEBUG("buf.length: %d", buf.length);
-
 		buffers[n_buffers].start =
 			mmap (NULL /* start anywhere */,
 				  buf.length,
@@ -663,92 +658,89 @@ long_options [] = {
 
 
 
-int main (int argc,
-		  char ** argv)
+int main ()
 {
-	dev_name = argv[1];
-
-	bp = open ("/dev/fb0",O_RDWR);
-	if (bp < 0)
-	{
-		printf("Error : Can not open framebuffer device/n");
-		exit(1);
-	}
-	if (ioctl(bp,FBIOGET_FSCREENINFO,&finfo))
-	{
-		printf("Error reading fixed information/n");
-		exit(2);
-	}
-	if (ioctl(bp,FBIOGET_VSCREENINFO,&vinfo))
-	{
-		printf("Error reading variable information/n");
-		exit(3);
-	}
+    int i_tmp = 0;
+    #if 0
+    char dev_0[] ="/dev/video0"
+    char dev_1[] ="/dev/video1"
+    char dev_2[] ="/dev/video2"
+    char dev_3[] ="/dev/video3"
+    #endif
+    while (1){
+    for(i_tmp = 0; i_tmp < 4; i_tmp++)
+    {
+    switch(i_tmp) {
+        case 0 :
+             strcpy(dev_name,"/dev/video0");
+             //dev_name = "/dev/video0";
+             break;
+        case 1 :
+             strcpy(dev_name,"/dev/video1");
+             //dev_name = "/dev/video1";
+             break;  
+        case 2 :
+             strcpy(dev_name,"/dev/video2");
+             //dev_name = "/dev/video2";
+             break;  
+        case 3 :
+             strcpy(dev_name,"/dev/video3");
+             //dev_name = "/dev/video3";
+             break;              
+    }
+     bp = open ("/dev/fb0",O_RDWR);
+     if (bp < 0)
+     {
+          printf("Error : Can not open framebuffer device/n");
+          exit(1);
+     }
+     if (ioctl(bp,FBIOGET_FSCREENINFO,&finfo))
+     {
+          printf("Error reading fixed information/n");
+          exit(2);
+     }
+     if (ioctl(bp,FBIOGET_VSCREENINFO,&vinfo))
+     {
+          printf("Error reading variable information/n");
+          exit(3);
+     }
 	vinfo.xres = HDMI_WIDTH;
 	vinfo.yres = HDMI_HEIGHT;
-	if (ioctl(bp,FBIOPUT_VSCREENINFO,&vinfo))
-	{
-		printf("Error setting variable information/n");
-		exit(3);
-	}
-         
-	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
-	fbp =(char *) mmap (0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, bp,0);
-	if ( fbp == MAP_FAILED )
-	{
-		printf ("Error: failed to map framebuffer device to memory./n");
-		close(bp);
-		exit (4);
-	}
-	// graphics or text-> ioctl(tty_fd,KDSETMODE,KD_TEXT);
-	tty=open("/dev/tty1",O_RDWR);
-	ioctl(tty,KDSETMODE,KD_GRAPHICS);
-	
-	/* undo  press key to stop capture!!!!!!!!*/
+     if (ioctl(bp,FBIOPUT_VSCREENINFO,&vinfo))
+     {
+          printf("Error setting variable information/n");
+          exit(3);
+     }
 
-// 	key = open("/dev/input/event",O_RDONLY);
+     screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
+     fbp =(char *) mmap (0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, bp,0);
+     if ( fbp == MAP_FAILED )
+     {
+        printf ("Error: failed to map framebuffer device to memory./n");
+        close(bp);
+        exit (4);
+     }
+    // graphics or text-> ioctl(tty_fd,KDSETMODE,KD_TEXT);
+    tty=open("/dev/tty1",O_RDWR);
+    ioctl(tty,KDSETMODE,KD_GRAPHICS);
 
-	for (;;) {
-		int index;
-		int c;
-		c = getopt_long (argc, argv,
-						 short_options, long_options,
-						 &index);
-		if (-1 == c)
-			break;
+    /* undo  press key to stop capture!!!!!!!!*/
 
+//  key = open("/dev/input/event",O_RDONLY);
+    open_device ();
+    init_device ();
+    start_capturing ();
+    mainloop ();
+    stop_capturing ();
+    clear();
+    uninit_device ();
+    close_device ();
+    }
+}
+#if 0   
 
-		switch (c) {
-		case 0: /* getopt_long() flag */
-			break;
-		case 'd':
-			dev_name = optarg;
-			break;
-		case 'h':
-			usage (stdout, argc, argv);
-			exit (EXIT_SUCCESS);
-		case 'm':
-			io = IO_METHOD_MMAP;
-			break;
-		case 'r':
-			io = IO_METHOD_READ;
-			break;
-		case 'u':
-			io = IO_METHOD_USERPTR;
-			break;
-		default:
-			usage (stderr, argc, argv);
-			exit (EXIT_FAILURE);
-		}
-	}
-	open_device ();
-	init_device ();
-	start_capturing ();
-	mainloop ();
-	stop_capturing ();
-	clear();
-	uninit_device ();
-	close_device ();
-	exit (EXIT_SUCCESS);
-	return 0;
+    exit (EXIT_SUCCESS);
+#endif
+
+    return 0;
 }
