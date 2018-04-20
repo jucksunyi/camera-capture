@@ -34,12 +34,9 @@
 #define HDMI_WIDTH 1280
 #define HDMI_HEIGHT 960
 
-#define VIDEO_WIDTH 1280
-#define VIDEO_HEIGHT 960
-
-#define RVIN_DEFAULT_FORMAT			V4L2_PIX_FMT_YUYV
-
-
+#define CAPTURE_PIXELFORMAT		(V4L2_PIX_FMT_YUYV)
+#define CAPTURE_FIELD		(V4L2_FIELD_NONE)
+//#define CAPTURE_FIELD					(V4L2_FIELD_INTERLACED_TB)
 
 #define __MYDEBUG__
 #ifdef __MYDEBUG__ 
@@ -383,7 +380,7 @@ static void init_mmap (void)
 {
 	struct v4l2_requestbuffers req;
 	CLEAR (req);
-	req.count = 6;
+	req.count = 1;
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_MMAP;
 	if (-1 == xioctl (fd, VIDIOC_REQBUFS, &req)) {
@@ -531,6 +528,9 @@ static void init_device (void)
 	if (0 == xioctl (fd, VIDIOC_CROPCAP, &cropcap)) {
 		crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		crop.c = cropcap.defrect; /* reset to default */
+		crop.c.width = CAMERA_WIDTH;
+		crop.c.height = CAMERA_HEIGHT;
+		
 		if (-1 == xioctl (fd, VIDIOC_S_CROP, &crop)) 
 		{
 			switch (errno)
@@ -553,10 +553,11 @@ static void init_device (void)
 	CLEAR (fmt);
 
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = VIDEO_WIDTH;
-	fmt.fmt.pix.height = VIDEO_HEIGHT;
-	fmt.fmt.pix.pixelformat = RVIN_DEFAULT_FORMAT;
-	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+	fmt.fmt.pix.width = CAMERA_WIDTH;
+	fmt.fmt.pix.height = CAMERA_HEIGHT;
+	fmt.fmt.pix.pixelformat =  CAPTURE_PIXELFORMAT;
+	fmt.fmt.pix.field		= 		CAPTURE_FIELD;	
+	
 	if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
 		errno_exit ("VIDIOC_S_FMT");
 	/* Note VIDIOC_S_FMT may change width and height. */
@@ -667,7 +668,7 @@ int main (int argc,
 		  char ** argv)
 {
 	dev_name = argv[1];
-
+#if 1	
 	bp = open ("/dev/fb0",O_RDWR);
 	if (bp < 0)
 	{
@@ -700,6 +701,7 @@ int main (int argc,
 		close(bp);
 		exit (4);
 	}
+#endif	
 	// graphics or text-> ioctl(tty_fd,KDSETMODE,KD_TEXT);
 	tty=open("/dev/tty1",O_RDWR);
 	ioctl(tty,KDSETMODE,KD_GRAPHICS);
@@ -742,6 +744,7 @@ int main (int argc,
 		}
 	}
 	open_device ();
+#if 1	
 	init_device ();
 	start_capturing ();
 	mainloop ();
@@ -750,5 +753,6 @@ int main (int argc,
 	uninit_device ();
 	close_device ();
 	exit (EXIT_SUCCESS);
+#endif	
 	return 0;
 }
