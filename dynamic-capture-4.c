@@ -34,13 +34,12 @@
 #define HDMI_WIDTH 1280
 #define HDMI_HEIGHT 960
 
-#define VIDEO_WIDTH 1280
-#define VIDEO_HEIGHT 960
 
 #define FRAME_SECOND  375    // speed is 12.5 frame/s, so 12.5*30 = 375, the time of cycle is 30s
 
-#define RVIN_DEFAULT_FORMAT			V4L2_PIX_FMT_YUYV
-
+#define CAPTURE_PIXELFORMAT		(V4L2_PIX_FMT_YUYV)
+#define CAPTURE_FIELD		(V4L2_FIELD_NONE)
+//#define CAPTURE_FIELD					(V4L2_FIELD_INTERLACED_TB)
 
 /************!!!*********************/
 // static io_method io = IO_METHOD_MMAP;   P48
@@ -548,10 +547,10 @@ static void init_device (void)
 	CLEAR (fmt);
 
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = VIDEO_WIDTH;
-	fmt.fmt.pix.height = VIDEO_HEIGHT;
-	fmt.fmt.pix.pixelformat = RVIN_DEFAULT_FORMAT;
-	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+	fmt.fmt.pix.width = CAMERA_WIDTH;
+	fmt.fmt.pix.height = CAMERA_HEIGHT;
+	fmt.fmt.pix.pixelformat =  CAPTURE_PIXELFORMAT;
+	fmt.fmt.pix.field		= 		CAPTURE_FIELD;	
 	if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
 		errno_exit ("VIDIOC_S_FMT");
 	/* Note VIDIOC_S_FMT may change width and height. */
