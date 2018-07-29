@@ -314,7 +314,7 @@ static void uninit_device (void)
 }
 static void init_read (unsigned int buffer_size)
 {
-    buffers = calloc (1, sizeof (*buffers));
+    buffers = (buffer *)calloc (1, sizeof (*buffers));
     if (!buffers) {
         fprintf (stderr, "Out of memory\n");
         exit (EXIT_FAILURE);
@@ -379,7 +379,7 @@ static void init_mmap (void)
         exit (EXIT_FAILURE);
     }
     printf("req buf count:%d\n",req.count);
-    buffers = calloc (req.count, sizeof (*buffers));
+    buffers = (buffer *)calloc (req.count, sizeof (*buffers));
     if (!buffers) {
         fprintf (stderr, "Out of memory\n");
         exit (EXIT_FAILURE);
@@ -420,7 +420,7 @@ static void init_userp (unsigned int buffer_size)
             errno_exit ("VIDIOC_REQBUFS");
         }
     }
-    buffers = calloc (4, sizeof (*buffers));
+    buffers = (buffer *)calloc (4, sizeof (*buffers));
     if (!buffers) {
         fprintf (stderr, "Out of memory\n");
         exit (EXIT_FAILURE);
